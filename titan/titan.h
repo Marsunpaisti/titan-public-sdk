@@ -30,6 +30,8 @@
 #include "preview_pills.h"
 #include "query.h"
 #include "render.h"
+#include "rune_element.h"
+#include "rune_element_equipment.h"
 #include "screenshot.h"
 #include "sprites.h"
 #include "setting.h"
