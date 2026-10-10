@@ -1,5 +1,5 @@
 /// @file titan/utils/runes.h
-/// @brief Element quantities supplied by inventory runes and equipped rune providers.
+/// @brief Element quantities supplied by inventory runes, carried pouches, and equipped providers.
 
 #pragma once
 
@@ -7,6 +7,7 @@
 #include "../inventory_id.h"
 #include "../rune_element.h"
 #include "../rune_element_equipment.h"
+#include "rune_pouch.h"
 
 #include <algorithm>
 #include <cstdint>
@@ -55,15 +56,40 @@ inline RuneElementAmounts getAvailableRuneElementAmountsFromEquippedItems(
     return result;
 }
 
-/// Rune-pouch contents are excluded; only loose inventory runes and equipped providers contribute.
+inline RuneElementAmounts getAvailableRuneElementAmountsFromCarriedRunePouch(
+        std::span<const ItemContainerSlot> inventoryItems,
+        std::span<const ItemContainerSlot> pouchContents, bool membersWorld) {
+    if (!membersWorld) return {};
+    const auto type = RunePouch::getCarriedRunePouchType(inventoryItems);
+    if (!type) return {};
+    const int32_t slotCount = *type == RunePouchType::DIVINE ? 4 : 3;
+    RunePouchContents available;
+    for (const auto& item : pouchContents) {
+        if (item.slot >= 0 && item.slot < slotCount) available.push_back(item);
+    }
+    return getAvailableRuneElementAmountsFromInventoryRunes(available, membersWorld);
+}
+
 inline RuneElementAmounts getCarriedRuneElementAmounts(
         std::span<const ItemContainerSlot> inventoryItems,
-        std::span<const ItemContainerSlot> equippedItems, bool membersWorld) {
+        std::span<const ItemContainerSlot> equippedItems,
+        std::span<const ItemContainerSlot> pouchContents, bool membersWorld) {
     auto result = getAvailableRuneElementAmountsFromInventoryRunes(inventoryItems, membersWorld);
+    for (const auto& [element, amount] : getAvailableRuneElementAmountsFromCarriedRunePouch(inventoryItems, pouchContents, membersWorld)) {
+        auto& total = result[element];
+        total += (std::min)(amount, kInfiniteRuneAmount - 1 - total);
+    }
     for (const auto& [element, amount] : getAvailableRuneElementAmountsFromEquippedItems(equippedItems, membersWorld)) {
         result[element] = amount;
     }
     return result;
+}
+
+/// Without a supplied pouch snapshot, only loose inventory runes and equipped providers contribute.
+inline RuneElementAmounts getCarriedRuneElementAmounts(
+        std::span<const ItemContainerSlot> inventoryItems,
+        std::span<const ItemContainerSlot> equippedItems, bool membersWorld) {
+    return getCarriedRuneElementAmounts(inventoryItems, equippedItems, {}, membersWorld);
 }
 
 namespace detail {
@@ -96,13 +122,27 @@ inline std::optional<RuneElementAmounts> getAvailableRuneElementAmountsFromEquip
     return getAvailableRuneElementAmountsFromEquippedItems(equipment->items, *membersWorld);
 }
 
+/// Pouch contents inherit the varbit reader's inability to distinguish unreadable values from zero.
+inline std::optional<RuneElementAmounts> getAvailableRuneElementAmountsFromCarriedRunePouch() {
+    const auto membersWorld = detail::currentWorldIsMembers();
+    if (!membersWorld) return std::nullopt;
+    if (!*membersWorld) return RuneElementAmounts{};
+    const auto inventory = state::itemContainer(static_cast<int32_t>(InventoryID::INVENTORY));
+    if (!inventory) return std::nullopt;
+    if (!RunePouch::getCarriedRunePouchType(inventory->items)) return RuneElementAmounts{};
+    return getAvailableRuneElementAmountsFromCarriedRunePouch(inventory->items, RunePouch::getRunePouchContents(), true);
+}
+
+/// Includes carried pouch contents; unreadable pouch varbits may appear empty.
 inline std::optional<RuneElementAmounts> getCarriedRuneElementAmounts() {
     const auto membersWorld = detail::currentWorldIsMembers();
     if (!membersWorld) return std::nullopt;
     const auto inventory = state::itemContainer(static_cast<int32_t>(InventoryID::INVENTORY));
     const auto equipment = state::itemContainer(static_cast<int32_t>(InventoryID::EQUIPMENT));
     if (!inventory || !equipment) return std::nullopt;
-    return getCarriedRuneElementAmounts(inventory->items, equipment->items, *membersWorld);
+    const auto pouch = *membersWorld && RunePouch::getCarriedRunePouchType(inventory->items)
+        ? RunePouch::getRunePouchContents() : RunePouchContents{};
+    return getCarriedRuneElementAmounts(inventory->items, equipment->items, pouch, *membersWorld);
 }
 
 }  // namespace titan::utils::Runes
