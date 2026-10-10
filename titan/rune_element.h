@@ -13,6 +13,9 @@
 
 namespace titan {
 
+/// Spell-resource kinds, independent of the item supplying them.
+/// A combination rune supplies multiple kinds; sunfire supplies FIRE rather than a separate kind.
+/// Enum values are not item IDs or rune-pouch type encodings.
 enum class RuneElement : int32_t {
     AIR,
     WATER,
@@ -31,6 +34,7 @@ enum class RuneElement : int32_t {
     WRATH,
 };
 
+/// Immutable item/element lookups; no SDK reads or world-membership filtering.
 namespace RuneElementInfo {
 
 namespace detail {
@@ -39,25 +43,31 @@ namespace detail {
 template <RuneElement... Elements>
 inline constexpr std::array<RuneElement, sizeof...(Elements)> kProvidedElements{Elements...};
 
+// Reverse-lookup spans need the same static backing lifetime as forward element spans.
 template <int32_t... ItemIds>
 inline constexpr std::array<int32_t, sizeof...(ItemIds)> kRuneIds{ItemIds...};
 
 }  // namespace detail
 
+/// One rune item's element coverage and source-item membership restriction.
+/// Catalog entries borrow immutable, static-lifetime element storage.
 struct RuneDefinition {
     int32_t itemId;
     std::span<const RuneElement> elements;
-    bool membersOnly = false;
+    bool membersOnly = false; ///< Exclude this source item when calculating supply on an F2P world.
 };
 
+/// Reverse mapping from an element to its primary rune and alternative rune items.
+/// Catalog spans borrow immutable, static-lifetime item-ID storage.
 struct ElementDefinition {
     RuneElement element;
-    int32_t primitiveRuneId;
-    std::span<const int32_t> combinationRuneIds;
+    int32_t primitiveRuneId; ///< Ordinary single-element rune, excluding variants such as sunfire.
+    std::span<const int32_t> combinationRuneIds; ///< Substitutes that also supply other elements.
     // Single-element substitutes, such as sunfire, are not combination runes.
     std::span<const int32_t> variantRuneIds;
 };
 
+/// Supported rune items, including combinations and single-element variants; item IDs are unique.
 inline constexpr std::array<RuneDefinition, 23> kRunes = {{
     {gamevals::ItemID::AIRRUNE,     detail::kProvidedElements<RuneElement::AIR>},
     {gamevals::ItemID::WATERRUNE,   detail::kProvidedElements<RuneElement::WATER>},
@@ -84,6 +94,7 @@ inline constexpr std::array<RuneDefinition, 23> kRunes = {{
     {gamevals::ItemID::SUNFIRERUNE, detail::kProvidedElements<RuneElement::FIRE>, true},
 }};
 
+/// One reverse-lookup entry per supported RuneElement; alternatives reference kRunes items.
 inline constexpr std::array kElements = {
     ElementDefinition{RuneElement::AIR, gamevals::ItemID::AIRRUNE,
         detail::kRuneIds<gamevals::ItemID::MISTRUNE, gamevals::ItemID::DUSTRUNE, gamevals::ItemID::SMOKERUNE>, {}},
@@ -107,6 +118,7 @@ inline constexpr std::array kElements = {
     ElementDefinition{RuneElement::WRATH, gamevals::ItemID::WRATHRUNE, {}, {}},
 };
 
+/// Returns every element supplied by a catalogued rune item, without membership filtering.
 /// The view refers to static catalog data; unknown item IDs produce an empty view.
 inline constexpr std::span<const RuneElement> getRuneElementsProvidedByRune(int32_t itemId) {
     for (const auto& rune : kRunes) {
@@ -115,11 +127,14 @@ inline constexpr std::span<const RuneElement> getRuneElementsProvidedByRune(int3
     return {};
 }
 
+/// Whether an item ID is in the rune catalog, including combinations and single-element variants.
+/// Unknown IDs return false; current world membership and possession are irrelevant.
 inline constexpr bool isRune(int32_t itemId) {
     return !getRuneElementsProvidedByRune(itemId).empty();
 }
 
-/// Invalid element values have no primary rune.
+/// Returns the ordinary single-element rune's item ID, not a combination or variant ID.
+/// Invalid element values have no primary rune and return nullopt.
 inline constexpr std::optional<int32_t> getPrimaryRuneForElement(RuneElement element) {
     for (const auto& entry : kElements) {
         if (entry.element == element) return entry.primitiveRuneId;
@@ -127,6 +142,7 @@ inline constexpr std::optional<int32_t> getPrimaryRuneForElement(RuneElement ele
     return std::nullopt;
 }
 
+/// Returns an owned list of all catalogued rune item IDs supplying the element, without membership filtering.
 /// Primary rune first, then combinations and variants; invalid elements produce an empty list.
 inline constexpr std::vector<int32_t> getAllRunesProvidingElement(RuneElement element) {
     for (const auto& entry : kElements) {
