@@ -19,3 +19,7 @@ add_test(NAME rune_amounts COMMAND rune_amounts_test)
 add_executable(rune_pouch_test rune_pouch_test.cpp)
 target_link_libraries(rune_pouch_test PRIVATE titan_sdk)
 add_test(NAME rune_pouch COMMAND rune_pouch_test)
+
+add_executable(runescape_bank_test runescape_bank_test.cpp)
+target_link_libraries(runescape_bank_test PRIVATE titan_sdk)
+add_test(NAME runescape_bank COMMAND runescape_bank_test)

@@ -1291,6 +1291,7 @@ headers below; publishing native contracts does not expose private client IPC.
 | `<titan/utils/deposit_box.h>` | Header-only inline `titan::utils::DepositBox::*` -- bank deposit box state reads (`isOpen`, `isDepositAllSelected`) and component-operation actions (`close`, `depositInventory`, `depositWorn`, `depositLootingBag`, `selectDepositAll`) built on `titan::state::widgets()` / `titan::state::vars()`. Composition only. Added in SDK 133. |
 | `<titan/keyboard.h>` | Inline `titan::keyboard::*` facade -- `sendString`, `sendKey`, `typeString`, `cancelTypeString`, `isTyping`. Routes through `IBackend` keyboard virtuals. Added in SDK 44. |
 | `<titan/bank_sets.h>` | `titan::BankSets::kBooths`, `kChests`, `kDepositBoxes`, `kAllBanksAndChests` constexpr arrays + `isBankObject(id)` helper. Added in SDK 44. |
+| `<titan/runescape_bank.h>` | C++-only `titan::RunescapeBank` destination enum and `RunescapeBankInfo::{kBanks, getLocation, canUse, getUsableBanks}`. Coordinates and live eligibility predicates ported from PaistiUtils; eligibility is not a complete access or route check. See [bank destinations](../docs/runescape-bank.md). |
 | `<titan/equipment_slot.h>` | `titan::EquipmentSlot` enum + `EquipmentSlotInfo::{name, slotWidgetPackedId, isValid, fromOrdinal}` helpers. Added in SDK 40. |
 | `<titan-plugin-sdk.d.ts>` | TypeScript types for JS plugins (mirrors the same three-shape layout: `titan.queries`, `titan.state`, `titan.utils`) |
 
