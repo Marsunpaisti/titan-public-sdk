@@ -265,32 +265,6 @@ int main() {
     skills[static_cast<int32_t>(Skill::MINING)] = 29;
     CHECK(!canUse(B::MOTHERLODE_MINE));
 
-    // Every supported pickaxe variant must retain its Mining, membership, and quest gates.
-    const std::pair<int32_t, int32_t> pickaxes[] = {
-        {1265, 1}, {1267, 1}, {1269, 6}, {12297, 11}, {1273, 21}, {1271, 31},
-        {1275, 41}, {23276, 41}, {11920, 61}, {23677, 61}, {25376, 61},
-        {13243, 61}, {25063, 61}, {30345, 61}, {13244, 61}, {25369, 61}, {30346, 61},
-        {23680, 71}, {23863, 71}, {23682, 71},
-    };
-    for (const auto& [id, mining] : pickaxes) {
-        reset();
-        item.itemId = id;
-        inventory = {item};
-        quests[137] = 2;
-        skills[static_cast<int32_t>(Skill::MINING)] = (std::max)(30, mining);
-        CHECK(canUse(B::MOTHERLODE_MINE));
-        if (mining > 30) {
-            skills[static_cast<int32_t>(Skill::MINING)] = mining - 1;
-            CHECK(!canUse(B::MOTHERLODE_MINE));
-            skills[static_cast<int32_t>(Skill::MINING)] = mining;
-        }
-        membersWorld = false;
-        CHECK(canUse(B::MOTHERLODE_MINE) == (id != 23276 && mining < 61));
-        membersWorld = true;
-        quests[137] = 0;
-        CHECK(canUse(B::MOTHERLODE_MINE) == (mining != 71));
-    }
-
     struct VarRequirement { B bank; int32_t id; int minimum; };
     for (const auto& [bank, id, minimum] : {
             VarRequirement{B::BURGH_DE_ROTT, VarbitID::MYREQUE_2_QUEST, 200},

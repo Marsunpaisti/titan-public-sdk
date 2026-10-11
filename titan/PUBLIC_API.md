@@ -1292,6 +1292,8 @@ headers below; publishing native contracts does not expose private client IPC.
 | `<titan/keyboard.h>` | Inline `titan::keyboard::*` facade -- `sendString`, `sendKey`, `typeString`, `cancelTypeString`, `isTyping`. Routes through `IBackend` keyboard virtuals. Added in SDK 44. |
 | `<titan/bank_sets.h>` | `titan::BankSets::kBooths`, `kChests`, `kDepositBoxes`, `kAllBanksAndChests` constexpr arrays + `isBankObject(id)` helper. Added in SDK 44. |
 | `<titan/runescape_bank.h>` | C++-only `titan::RunescapeBank` destination enum and `RunescapeBankInfo::{kBanks, getLocation, canUse, getUsableBanks}`. Coordinates and live eligibility predicates ported from PaistiUtils; eligibility is not a complete access or route check. See [bank destinations](../docs/runescape-bank.md). |
+| `<titan/utils/pickaxe.h>` | Header-only `titan::utils::Pickaxe::canUse(itemId)` checks real Mining level, world membership, and quest requirements; `hasUsablePickaxe()` checks inventory and equipment possession. Supported unnoted variants follow PaistiUtils Pickaxe. |
+| `<titan/utils/axe.h>` | Header-only `titan::utils::Axe::canUse(itemId)` checks real Woodcutting level, world membership, and the crystal-axe quest requirement; `hasUsableAxe()` checks inventory and equipment possession. Supported unnoted variants follow PaistiUtils Axe, including felling axes and excluding uncharged infernal axes. Eligibility does not check wielding levels or felling bonuses. |
 | `<titan/equipment_slot.h>` | `titan::EquipmentSlot` enum + `EquipmentSlotInfo::{name, slotWidgetPackedId, isValid, fromOrdinal}` helpers. Added in SDK 40. |
 | `<titan-plugin-sdk.d.ts>` | TypeScript types for JS plugins (mirrors the same three-shape layout: `titan.queries`, `titan.state`, `titan.utils`) |
 

@@ -8,8 +8,8 @@
 #include "generated/gamevals/quest_id.h"
 #include "generated/gamevals/var_player_id.h"
 #include "generated/gamevals/varbit_id.h"
-#include "inventory_id.h"
 #include "query.h"
+#include "utils/pickaxe.h"
 
 #include <array>
 #include <optional>
@@ -250,48 +250,6 @@ inline bool membersWorld() {
     return false;
 }
 
-inline bool usablePickaxe(int32_t itemId) {
-    using I = gamevals::ItemID;
-    const auto mining = state::skills().real(Skill::MINING);
-    // Explicit unnoted IDs preserve PaistiUtils Pickaxe's supported variants and exclude broken tools.
-    switch (itemId) {
-    case I::BRONZE_PICKAXE:
-    case I::IRON_PICKAXE: return mining >= 1;
-    case I::STEEL_PICKAXE: return mining >= 6;
-    case I::BLACK_PICKAXE: return mining >= 11;
-    case I::MITHRIL_PICKAXE: return mining >= 21;
-    case I::ADAMANT_PICKAXE: return mining >= 31;
-    case I::RUNE_PICKAXE: return mining >= 41;
-    case I::TRAIL_GILDED_PICKAXE: return mining >= 41 && membersWorld();
-    case I::DRAGON_PICKAXE:
-    case I::ZALCANO_PICKAXE:
-    case I::TRAILBLAZER_PICKAXE_NO_INFERNAL:
-    case I::INFERNAL_PICKAXE:
-    case I::TRAILBLAZER_PICKAXE:
-    case I::TRAILBLAZER_RELOADED_PICKAXE:
-    case I::INFERNAL_PICKAXE_EMPTY:
-    case I::TRAILBLAZER_PICKAXE_EMPTY:
-    case I::TRAILBLAZER_RELOADED_PICKAXE_EMPTY:
-        return mining >= 61 && membersWorld();
-    case I::CRYSTAL_PICKAXE:
-    case I::GAUNTLET_PICKAXE:
-    case I::CRYSTAL_PICKAXE_INACTIVE:
-        return mining >= 71 && membersWorld() && questFinished(gamevals::QuestID::QUEST_SONGOFTHEELVES);
-    default: return false;
-    }
-}
-
-inline bool hasUsablePickaxe() {
-    for (const auto containerId : {InventoryID::INVENTORY, InventoryID::EQUIPMENT}) {
-        const auto container = state::itemContainer(static_cast<int32_t>(containerId));
-        if (!container) continue;
-        for (const auto& item : container->items) {
-            if (item.quantity > 0 && usablePickaxe(item.itemId)) return true;
-        }
-    }
-    return false;
-}
-
 }  // namespace detail
 
 /// Evaluates the source catalog's predicates against current SDK state, without caching.
@@ -361,7 +319,7 @@ inline bool canUse(RunescapeBank bank) {
         const auto player = state::client().localPlayer();
         if (player && player->worldPoint().distanceTo({3756, 5666, 0, WorldView::TOP_LEVEL}) <= 9)
             return true;
-        return detail::hasUsablePickaxe();
+        return utils::Pickaxe::hasUsablePickaxe();
     }
     case RunescapeBank::MINING_GUILD:
         return state::skills().real(Skill::MINING) >= 60;

@@ -23,3 +23,11 @@ add_test(NAME rune_pouch COMMAND rune_pouch_test)
 add_executable(runescape_bank_test runescape_bank_test.cpp)
 target_link_libraries(runescape_bank_test PRIVATE titan_sdk)
 add_test(NAME runescape_bank COMMAND runescape_bank_test)
+
+add_executable(pickaxe_test pickaxe_test.cpp)
+target_link_libraries(pickaxe_test PRIVATE titan_sdk)
+add_test(NAME pickaxe COMMAND pickaxe_test)
+
+add_executable(axe_test axe_test.cpp)
+target_link_libraries(axe_test PRIVATE titan_sdk)
+add_test(NAME axe COMMAND axe_test)
