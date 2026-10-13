@@ -1,24 +1,57 @@
-/// @file titan/utils/rune_pouch.h
-/// @brief Rune-pouch possession and contents, independent of world membership.
+/// @file titan/utils/runes/rune_pouch.h
+/// @brief Rune-pouch types, capacity, possession, and decoded contents.
 
 #pragma once
 
-#include "../generated/gamevals/item_id.h"
-#include "../generated/gamevals/varbit_id.h"
-#include "../rune_pouch.h"
-#include "bank.h"
+#include "../../client.h"
+#include "../../generated/gamevals/item_id.h"
+#include "../../generated/gamevals/varbit_id.h"
+#include "../../inventory_id.h"
+#include "../../item_cache.h"
+#include "../bank.h"
 
 #include <array>
+#include <cstdint>
 #include <optional>
 #include <span>
+#include <vector>
+
+namespace titan {
+
+/// Normal pouch capacities; locked variants retain their type and special-mode extra slots are not modeled.
+enum class RunePouchType {
+    REGULAR, ///< Three usable slots, indexed 0 through 2.
+    DIVINE,  ///< Four usable slots, indexed 0 through 3.
+};
+
+/// Occupied slots only, retaining zero-based pouch slot indices rather than inventory indices.
+/// Each entry holds a decoded rune item ID and positive quantity; sparse slots keep their original index.
+/// Stored contents can outlive possession and do not establish that the runes are currently usable.
+using RunePouchContents = std::vector<ItemContainerSlot>;
+
+}  // namespace titan
 
 /// Pouch possession and stored contents; none of these queries requires a members world.
 namespace titan::utils::RunePouch {
 
+/// Number of usable slots for a normal pouch; invalid types have no usable slots.
+inline constexpr int32_t capacity(RunePouchType type) {
+    switch (type) {
+    case RunePouchType::REGULAR: return 3;
+    case RunePouchType::DIVINE: return 4;
+    default: return 0;
+    }
+}
+
+/// Whether a decoded slot belongs to the carried pouch's usable capacity.
+inline constexpr bool isValidSlot(RunePouchType type, int32_t slot) {
+    return slot >= 0 && slot < capacity(type);
+}
+
 namespace detail {
 
 // TODO: Read cache enum 982 when runtime enum access is available in the SDK.
-// Table index is the encoded pouch rune type minus one, not RuneElement's enum value; zero means empty.
+// Table index is the encoded pouch rune type minus one, not a rune item ID; zero means empty.
 inline constexpr std::array kRuneIds{
     gamevals::ItemID::AIRRUNE, gamevals::ItemID::WATERRUNE, gamevals::ItemID::EARTHRUNE,
     gamevals::ItemID::FIRERUNE, gamevals::ItemID::MINDRUNE, gamevals::ItemID::CHAOSRUNE,
@@ -78,12 +111,10 @@ inline bool accountOwnsRunePouch(std::span<const ItemContainerSlot> inventoryIte
     return getCarriedRunePouchType(inventoryItems).has_value() || getCarriedRunePouchType(bankItems).has_value();
 }
 
-/// Returns true when current inventory or usable bank data contains a supported pouch, regardless of membership.
-/// False requires known inventory and bank contents; nullopt means ownership is unknown.
-/// A readable open bank takes precedence over the host cache; an unknown/loading cache cannot establish absence.
-/// Remembered bank contents are advisory and scoped to the current account by the host.
-/// Test the contained boolean (e.g. result == true); an engaged optional can also contain false.
-inline std::optional<bool> accountOwnsRunePouch() {
+/// Accepts a positive observation from inventory, the open bank, or the host's remembered bank.
+/// Membership and cache-loading status do not gate ownership; false means not observed, not proven absent.
+/// Remembered contents are advisory and can remain stale until the host refreshes the account's cache.
+inline bool accountOwnsRunePouch() {
     const auto inventory = state::itemContainer(static_cast<int32_t>(InventoryID::INVENTORY));
     if (inventory && getCarriedRunePouchType(inventory->items)) return true;
 
@@ -91,13 +122,9 @@ inline std::optional<bool> accountOwnsRunePouch() {
     if (Bank::isOpen()) {
         if (const auto bank = state::itemContainer(static_cast<int32_t>(InventoryID::BANK))) {
             if (getCarriedRunePouchType(bank->items)) return true;
-            return inventory ? std::optional<bool>{false} : std::nullopt;
         }
     }
-    const auto bank = state::itemCache().bank();
-    if (!bank || !bank->known || bank->loading) return std::nullopt;
-    if (getCarriedRunePouchType(bank->items)) return true;
-    return inventory ? std::optional<bool>{false} : std::nullopt;
+    return getCarriedRunePouchType(state::itemCache().getBankItems()).has_value();
 }
 
 /// Decodes all four stored pouch slots into owned rune item IDs and positive quantities, in slot order.

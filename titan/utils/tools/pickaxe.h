@@ -1,12 +1,12 @@
-/// @file titan/utils/pickaxe.h
+/// @file titan/utils/tools/pickaxe.h
 /// @brief Live pickaxe eligibility and possession checks ported from PaistiUtils Pickaxe.
 
 #pragma once
 
-#include "../client.h"
-#include "../generated/gamevals/item_id.h"
-#include "../generated/gamevals/quest_id.h"
-#include "../inventory_id.h"
+#include "../../client.h"
+#include "../../generated/gamevals/item_id.h"
+#include "../../generated/gamevals/quest_id.h"
+#include "../../inventory_id.h"
 
 #include <cstdint>
 #include <initializer_list>

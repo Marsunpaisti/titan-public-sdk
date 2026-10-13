@@ -9,7 +9,7 @@
 #include "generated/gamevals/var_player_id.h"
 #include "generated/gamevals/varbit_id.h"
 #include "query.h"
-#include "utils/pickaxe.h"
+#include "utils/tools/pickaxe.h"
 
 #include <array>
 #include <optional>

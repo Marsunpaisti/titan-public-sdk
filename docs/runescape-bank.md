@@ -52,7 +52,7 @@ every bank or every access requirement. In particular:
 - Crafting Guild retains the source's 99 Crafting requirement; diary-based
   alternatives are not modeled. Skill gates use real levels, not boosts.
 - Motherlode Mine delegates to `titan::utils::Pickaxe::hasUsablePickaxe()` in
-  `<titan/utils/pickaxe.h>` for supported IDs, Mining levels, membership, and
+  `<titan/utils/tools/pickaxe.h>` for supported IDs, Mining levels, membership, and
   the crystal-pickaxe quest gate, or allows being
   within nine tiles of its entrance point on the same plane. The pickaxe list
   is not an exhaustive catalog of all tools in the game.

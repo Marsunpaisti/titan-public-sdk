@@ -1,4 +1,4 @@
-#include <titan/rune_element.h>
+#include <titan/utils/runes/rune_element.h>
 
 #include <algorithm>
 #include <array>
@@ -8,7 +8,7 @@
 
 using titan::RuneElement;
 using titan::gamevals::ItemID;
-using namespace titan::RuneElementInfo;
+using namespace titan::utils::RuneElement;
 
 static_assert(isRune(ItemID::WATERRUNE));
 static_assert(isRune(ItemID::STEAMRUNE));

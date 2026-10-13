@@ -1,4 +1,4 @@
-#include <titan/utils/runes.h>
+#include <titan/utils/runes/rune_element.h>
 #include <titan/detail/backend_external.h>
 
 #include "check.h"
@@ -11,7 +11,7 @@ using titan::InventoryID;
 using titan::ItemContainerSlot;
 using titan::RuneElement;
 using titan::gamevals::ItemID;
-using namespace titan::utils::Runes;
+using namespace titan::utils::RuneElement;
 
 namespace {
 

@@ -1,4 +1,4 @@
-#include <titan/rune_element_equipment.h>
+#include <titan/utils/runes/rune_element.h>
 
 #include <algorithm>
 #include <array>
@@ -8,7 +8,7 @@
 using titan::EquipmentSlot;
 using titan::RuneElement;
 using titan::gamevals::ItemID;
-using namespace titan::RuneElementEquipmentInfo;
+using namespace titan::utils::RuneElement;
 
 static_assert(std::ranges::equal(getRuneElementsProvidedByEquipment(ItemID::STAFF_OF_FIRE),
     std::array{RuneElement::FIRE}));

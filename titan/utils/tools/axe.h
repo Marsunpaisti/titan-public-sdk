@@ -1,12 +1,12 @@
-/// @file titan/utils/axe.h
+/// @file titan/utils/tools/axe.h
 /// @brief Live woodcutting-axe eligibility and possession checks ported from PaistiUtils Axe.
 
 #pragma once
 
-#include "../client.h"
-#include "../generated/gamevals/item_id.h"
-#include "../generated/gamevals/quest_id.h"
-#include "../inventory_id.h"
+#include "../../client.h"
+#include "../../generated/gamevals/item_id.h"
+#include "../../generated/gamevals/quest_id.h"
+#include "../../inventory_id.h"
 
 #include <cstdint>
 #include <initializer_list>

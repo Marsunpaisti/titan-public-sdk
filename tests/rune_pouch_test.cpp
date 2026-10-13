@@ -1,4 +1,5 @@
-#include <titan/utils/runes.h>
+#include <titan/utils/runes/rune_pouch.h>
+#include <titan/utils/runes/rune_element.h>
 #include <titan/detail/backend_external.h>
 
 #include "check.h"
@@ -12,7 +13,7 @@ using titan::RunePouchType;
 using titan::gamevals::ItemID;
 using titan::gamevals::VarbitID;
 using namespace titan::utils::RunePouch;
-using namespace titan::utils::Runes;
+using namespace titan::utils::RuneElement;
 
 namespace {
 
@@ -57,6 +58,13 @@ int main() {
     };
     CHECK(!accountOwnsRunePouch(ignored, ignored));
 
+    CHECK(!isValidSlot(RunePouchType::REGULAR, -1));
+    CHECK(isValidSlot(RunePouchType::REGULAR, 2));
+    CHECK(!isValidSlot(RunePouchType::REGULAR, 3));
+    CHECK(isValidSlot(RunePouchType::DIVINE, 3));
+    CHECK(!isValidSlot(RunePouchType::DIVINE, 4));
+    CHECK(!isValidSlot(static_cast<RunePouchType>(-1), 0));
+
     // Slot four can remain populated in stored data even when only a regular pouch is carried.
     const titan::RunePouchContents contents{
         {0, ItemID::MISTRUNE, 10}, {2, ItemID::STEAMRUNE, 20}, {3, ItemID::AETHERRUNE, 30},
@@ -81,7 +89,7 @@ int main() {
     carriedAmounts[RuneElement::FIRE] = kInfiniteRuneAmount;
     CHECK(getCarriedRuneElementAmounts(inventoryWithRunes, equipment, contents, true) == carriedAmounts);
 
-    CHECK(!accountOwnsRunePouch().has_value());
+    CHECK(!accountOwnsRunePouch());
     CHECK(!getCarriedRunePouchType());
     CHECK(getRunePouchContents().empty());
     CHECK(!getAvailableRuneElementAmountsFromCarriedRunePouch());
@@ -122,7 +130,7 @@ int main() {
     auto* previousBackend = titan::detail::backendRef();
     titan::detail::backendRef() = &backend;
 
-    CHECK(!accountOwnsRunePouch().has_value());
+    CHECK(!accountOwnsRunePouch());
     rememberedBank.known = 1;
     CHECK(accountOwnsRunePouch() == false);
     rememberedBank.bank.writtenCount = 1;
@@ -132,28 +140,33 @@ int main() {
     inventoryAvailable = false;
     CHECK(accountOwnsRunePouch() == true);
     rememberedBank.bank.quantities[0] = 0;
-    CHECK(!accountOwnsRunePouch().has_value());
+    CHECK(!accountOwnsRunePouch());
     inventoryAvailable = true;
     CHECK(accountOwnsRunePouch() == false);
     rememberedBank.loading = 1;
-    CHECK(!accountOwnsRunePouch().has_value());
+    CHECK(!accountOwnsRunePouch());
+    // A refresh in progress must not discard a remembered positive observation.
+    rememberedBank.bank.quantities[0] = 1;
+    CHECK(accountOwnsRunePouch());
+    rememberedBank.bank.quantities[0] = 0;
     rememberedBank.loading = 0;
     bankCacheAvailable = false;
-    CHECK(!accountOwnsRunePouch().has_value());
+    CHECK(!accountOwnsRunePouch());
     inventory.assign(regular.begin(), regular.end());
     CHECK(accountOwnsRunePouch() == true);
     CHECK(getCarriedRunePouchType() == RunePouchType::REGULAR);
     inventory.clear();
     bankCacheAvailable = true;
 
-    // A closed native container may belong to a previous login; a known empty cache wins.
+    // A closed native container is not a present observation of the current account's bank.
     liveBank.assign(divine.begin(), divine.end());
     CHECK(accountOwnsRunePouch() == false);
     bankOpen = true;
     CHECK(accountOwnsRunePouch() == true);
     liveBank.clear();
     rememberedBank.bank.quantities[0] = 1;
-    CHECK(accountOwnsRunePouch() == false);
+    // An empty open bank must not veto remembered positive evidence.
+    CHECK(accountOwnsRunePouch() == true);
     bankAvailable = false;
     CHECK(accountOwnsRunePouch() == true);
     bankOpen = false;
