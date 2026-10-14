@@ -31,3 +31,16 @@ add_test(NAME pickaxe COMMAND pickaxe_test)
 add_executable(axe_test axe_test.cpp)
 target_link_libraries(axe_test PRIVATE titan_sdk)
 add_test(NAME axe COMMAND axe_test)
+
+add_executable(magic_catalog_dump magic_catalog_dump.cpp)
+target_link_libraries(magic_catalog_dump PRIVATE titan_sdk)
+add_test(NAME magic_catalog_coverage COMMAND magic_catalog_dump)
+
+add_executable(magic_requirements_test magic_requirements_test.cpp)
+target_link_libraries(magic_requirements_test PRIVATE titan_sdk)
+add_test(NAME magic_requirements COMMAND magic_requirements_test)
+
+find_package(Python3 3.9 COMPONENTS Interpreter REQUIRED)
+add_test(NAME magic_wiki_audit COMMAND ${Python3_EXECUTABLE}
+    ${CMAKE_CURRENT_SOURCE_DIR}/validate_spell_wiki.py $<TARGET_FILE:magic_catalog_dump>
+    --audit ${CMAKE_CURRENT_SOURCE_DIR}/fixtures/spells-wiki.json)
