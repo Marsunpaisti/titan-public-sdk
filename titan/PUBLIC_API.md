@@ -1781,24 +1781,39 @@ TypeScript expose it as `titan.utils.prayers`.
 
 ### `titan::utils::Magic` (SDK 49+)
 
-Header-only spellbook metadata helpers in `<titan/utils/magic.h>`. The
-spell catalogs mirror TP_RL names and levels; widget ids mirror RuneLite
-`InterfaceID.MagicSpellbook`. Bare spell selection/casts use the widget
-interaction backend for the spell widget's `WIDGET_TARGET` action.
+Header-only spellbook metadata and requirement helpers in `<titan/utils/magic.h>`.
+The native catalogue's rune costs, levels and membership flags are checked against
+OSRS Wiki spell pages; widget IDs use generated `InterfaceID::MagicSpellbook`.
+The saved Wiki evidence is in `tests/fixtures/spells-wiki.json`; the
+`magic_wiki_audit` test verifies every entry's rune cost, level and membership.
 
 | Function / type | Summary |
 | --- | --- |
 | `SpellBook`, `Standard`, `Ancient`, `Lunar`, `Necromancy` | Typed spellbook and spell enums. |
 | `SpellInfo`, `info(spell)` | Name, level, widget, book, members flag, and menu-entry id metadata. |
+| `SpellRequirements`, `requirements(spell)` | Per-cast rune costs, quest/unlock/cooldown IDs, named additional requirements and eligible spell-sack alternative. |
+| `BoltEnchantment` | Ten individually costed enchant-bolts variants; `cast` opens the shared dialog, and the consumer handles bolt selection. |
 | `currentSpellBook()`, `isAutoCasting()` | Live varbit/varp state reads. |
 | `lastHomeTeleportUsage()`, `isHomeTeleportOnCooldown()` | Home-teleport timing from varp 892. |
-| `canCast(spell)` | Current-book and Magic-level check, plus TP_RL's active Standard Ardy/Trollheim gates. |
-| `select(spell)`, `cast(spell)` | Dispatch widget interact `WIDGET_TARGET` with `identifier=0`, `param0=-1`, `param1=<spell packed widget id>`. `select` delegates to `cast`. |
+| `haveRunesForSpell(spell)` | Loose runes, carried pouch and equipped providers, or an eligible blighted spell sack. |
+| `additionalRequirementsSatisfied(spell)` | Player unlocks, required items/equipment, secondary skills, resources and cooldowns; excludes location/target restrictions. |
+| `canCast(spell)` | Current book, current Magic level, membership, rune supply and additional prerequisites. Each check also accepts a supplied `SpellCastState`. |
+| `select(spell)` | Select the spell for targeting using `WIDGET_TARGET`; does not cast by itself. |
+| `cast(spell)` | Click the spell's own option using `CC_OP`. Bolt enchantments open the shared dialog. Does not enforce `canCast`. |
 | `cast(spell, actionIndex)`, `cast(spell, actionIndex, opcode)` | Dispatch widget interact with `identifier=1+actionIndex`; the two-arg overload uses `CC_OP`. |
 | `castOn` | Selects the spell, then schedules the target action on the next client tick for NPC, player, inventory item, tile object, ground item, and widget targets. Entity/world target entries resolve a target click point through the native clickbox/projected-footprint path before dispatch; inventory/widget targets use widget interact. Target action text is `Cast`; target text is blank for now. |
 
+`SpellCastState` overloads perform no SDK reads. Quest-map keys use native
+`gamevals::QuestID` values; live checks translate them to script DB row IDs.
+Compute supplied rune amounts from the same inventory/equipment/pouch snapshot.
+Location, target validity and processing ingredients remain caller-owned.
+Iban staff charges, Charge's recast timer and boat-focus ownership are deliberately
+not checked; their known quest/equipment requirements still apply. Live var reads
+inherit the SDK's lack of a success flag, and sequential reads are not atomic.
+
 JS/TS mirrors live at `titan.utils.magic` with spell catalog objects and
-the same bare, indexed, and targeted spell dispatch behavior.
+the same bare, indexed, and targeted spell dispatch behavior. The expanded native
+requirements catalogue and checks are not yet mirrored to Java or QuickJS.
 
 ### `titan::utils::Mouse` (SDK 94+)
 

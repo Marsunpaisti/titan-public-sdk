@@ -1,5 +1,5 @@
 /// @file titan/utils/magic/spell_catalog.h
-/// @brief Per-cast costs and unlocks. Wiki provenance and validation: docs/spells.md.
+/// @brief Per-cast costs and unlocks. Wiki provenance and validation: titan/PUBLIC_API.md.
 #pragma once
 
 #include "spell_requirements.h"

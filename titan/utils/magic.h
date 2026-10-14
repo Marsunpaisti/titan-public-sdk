@@ -6,7 +6,7 @@
 /// through the widget interaction backend. Targeted casts queue spell
 /// selection and the follow-up target action together as one ordered input
 /// sequence; the backend provides the required frame spacing. Requirement checks
-/// use the Wiki-audited catalogue documented in docs/spells.md.
+/// use the Wiki-audited catalogue documented in titan/PUBLIC_API.md.
 
 #pragma once
 
