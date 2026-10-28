@@ -6,6 +6,7 @@
 #include "client.h"
 #include "generated/gamevals/item_id.h"
 #include "generated/gamevals/quest_id.h"
+#include "generated/gamevals/quest_id_table.h"
 #include "generated/gamevals/var_player_id.h"
 #include "generated/gamevals/varbit_id.h"
 #include "query.h"

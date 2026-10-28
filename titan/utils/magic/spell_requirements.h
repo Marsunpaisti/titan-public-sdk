@@ -5,6 +5,7 @@
 #include "../runes/rune_element.h"
 #include "../../generated/gamevals/interface_id.h"
 #include "../../generated/gamevals/quest_id.h"
+#include "../../generated/gamevals/quest_id_table.h"
 #include "../../generated/gamevals/var_player_id.h"
 #include "../../skill.h"
 #include "../../var_player.h"

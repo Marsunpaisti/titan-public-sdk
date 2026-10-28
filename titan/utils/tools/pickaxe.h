@@ -6,6 +6,7 @@
 #include "../../client.h"
 #include "../../generated/gamevals/item_id.h"
 #include "../../generated/gamevals/quest_id.h"
+#include "../../generated/gamevals/quest_id_table.h"
 #include "../../inventory_id.h"
 
 #include <cstdint>
