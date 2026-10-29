@@ -152,8 +152,8 @@ inline constexpr const char* kWebWalkerProviderV3ServiceId =
 inline constexpr uint32_t kWebWalkerProviderV3ApiVersion = 3;
 /// Most destinations, and most starts, one V3 path request may list.
 inline constexpr uint32_t kWebPathV3MaxEndpoints = 4096;
-/// Largest cost, in ABI points, a V3 request may add to one destination. It
-/// keeps every added cost far below the provider's cost range.
+/// Largest cost, in ABI points, a V3 request may add to one start or one
+/// destination. It keeps every added cost far below the provider's cost range.
 inline constexpr uint32_t kWebPathV3MaxExtraCost = 1'000'000;
 
 /// How hard a V3 route keeps out of the Wilderness. Soft and Hard also make
@@ -226,23 +226,31 @@ struct WebPathDestinationState {
     uint32_t reserved0 = 0;
 };
 
-/// A V3 route request. The route ends at whichever destination is cheapest to
-/// reach, counting its costOffset. Costs are ABI points, so a walked tile
-/// costs kWebPathWalkCostPoints. Array pointers are borrowed for the call.
+struct WebPathStartState {
+    TitanPluginSdk::WorldPointState tile{};
+    /// Points added when the route starts here, such as the cost of getting
+    /// there, so a caller can rank starts. At most kWebPathV3MaxExtraCost.
+    uint32_t costOffset = 0;
+    uint32_t reserved0 = 0;
+};
+
+/// A V3 route request. The route runs between whichever start and destination
+/// are cheapest, counting their costOffsets. Costs are ABI points, so a walked
+/// tile costs kWebPathWalkCostPoints. Array pointers are borrowed for the call.
 struct WebPathRequestV3State {
     uint32_t structSize = sizeof(WebPathRequestV3State);
     uint32_t apiVersion = kWebWalkerProviderV3ApiVersion;
     const WebPathDestinationState* destinations = nullptr;
     uint32_t destinationCount = 0;
-    /// Alternative start tiles, read only without UseLocalPlayer. The route
-    /// starts from whichever suits it best.
+    /// Alternative starts, read only without UseLocalPlayer.
     uint32_t startCount = 0;
-    const TitanPluginSdk::WorldPointState* starts = nullptr;
+    const WebPathStartState* starts = nullptr;
     uint32_t routeSpace = TitanPluginSdk::WebPathRouteSpace::Global;
     uint32_t flags = WebPathV3Flag::Default;
     uint32_t transports = WebPathTransport::Default;
     uint32_t timeoutMs = TitanPluginSdk::kWebPathDefaultTimeoutMs;
-    /// Inclusive cap on the route's total cost; zero means none.
+    /// Inclusive cap on the route's cost plus its start's and destination's
+    /// costOffsets; zero means none.
     uint32_t maxCost = 0;
     uint32_t wildernessAvoidance = WebPathWildernessAvoidance::Hard;
 };
@@ -315,6 +323,7 @@ static_assert(std::is_standard_layout_v<WebWalkRequestV3State>);
 static_assert(std::is_standard_layout_v<WebWalkerProviderV3>);
 static_assert(std::is_trivially_copyable_v<WebWalkerProviderV3>);
 static_assert(sizeof(WebPathDestinationState) == 24);
+static_assert(sizeof(WebPathStartState) == 24);
 static_assert(sizeof(WebPathRequestV3State) == 56);
 static_assert(sizeof(WebWalkRequestV3State) == 80);
 static_assert(sizeof(WebWalkerProviderV3) == 104);
