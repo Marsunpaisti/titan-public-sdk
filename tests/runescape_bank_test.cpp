@@ -47,7 +47,7 @@ void reset() {
 
 int main() {
     using B = RunescapeBank;
-    static_assert(kBanks.size() == 92);
+    static_assert(kBanks.size() == 102);
     static_assert(getLocation(B::GRAND_EXCHANGE)->x == 3164);
     static_assert(getLocation(B::GREAT_KOUREND_CASTLE)->z == 2);
     static_assert(!getLocation(static_cast<B>(-1)));
@@ -151,7 +151,8 @@ int main() {
         {B::BLAST_MINE, Skill::MINING, 43}, {B::CRAFTING_GUILD, Skill::CRAFTING, 99},
         {B::FARMING_GUILD, Skill::FARMING, 45}, {B::FARMING_GUILD_NORTH, Skill::FARMING, 85},
         {B::FISHING_GUILD, Skill::FISHING, 68}, {B::MINING_GUILD, Skill::MINING, 60},
-        {B::WOODCUTTING_GUILD, Skill::WOODCUTTING, 60},
+        {B::WOODCUTTING_GUILD, Skill::WOODCUTTING, 60}, {B::PORT_ROBERTS_BANK, Skill::SAILING, 50},
+        {B::DEEPFIN_POINT, Skill::SAILING, 67},
     };
     for (const auto& [bank, skill, minimum] : levels) {
         reset();
@@ -160,6 +161,25 @@ int main() {
         skills[static_cast<int32_t>(skill)] = minimum;
         CHECK(canUse(bank));
     }
+    for (const auto diary : {VarbitID::FALADOR_DIARY_HARD_COMPLETE, VarbitID::FALADOR_DIARY_ELITE_COMPLETE}) {
+        reset();
+        skills[static_cast<int32_t>(Skill::CRAFTING)] = 1;
+        varbits[diary] = 1;
+        CHECK(canUse(B::CRAFTING_GUILD));
+    }
+    struct SailingStage { B bank; int level; int32_t quest; int stage; };
+    for (const auto& [bank, level, quest, stage] : {SailingStage{B::GREAT_CONCH_BANK, 45, VarbitID::TT, 8},
+                                                    SailingStage{B::RED_ROCK_BANK, 52, VarbitID::TRR, 10}}) {
+        reset();
+        skills[static_cast<int32_t>(Skill::SAILING)] = level;
+        varbits[quest] = stage - 1;
+        CHECK(!canUse(bank));
+        varbits[quest] = stage;
+        CHECK(canUse(bank));
+        skills[static_cast<int32_t>(Skill::SAILING)] = level - 1;
+        CHECK(!canUse(bank));
+    }
+
     reset();
     skills[0] = 65;
     skills[2] = 64;
@@ -269,7 +289,13 @@ int main() {
     for (const auto& [bank, id, minimum] : {
             VarRequirement{B::BURGH_DE_ROTT, VarbitID::MYREQUE_2_QUEST, 200},
             VarRequirement{B::THE_PANDEMONIUM, VarbitID::SAILING_INTRO, 16},
-            VarRequirement{B::INFERNO, VarbitID::INFERNO_SACRIFICED_FIRECAPE, 1}}) {
+            VarRequirement{B::INFERNO, VarbitID::INFERNO_SACRIFICED_FIRECAPE, 1},
+            VarRequirement{B::CHARRED_ISLAND_BANK, VarbitID::AMENITY_BANKCHEST_CHARRED_ISLAND, 1},
+            VarRequirement{B::WYRMSCRAIG_BANK, VarbitID::AMENITY_BANKCHEST_WYRMSCRAIG, 1},
+            VarRequirement{B::SUNBLEAK_ISLAND_BANK, VarbitID::AMENITY_BANKCHEST_SUNBLEAK, 1},
+            VarRequirement{B::BUCCANEERS_HAVEN_BANK, VarbitID::AMENITY_BANKCHEST_BUCCANEERS, 1},
+            VarRequirement{B::DEEPFIN_MINE_WEST_BANK, VarbitID::AMENITY_BANKCHEST_DEEPFIN_1, 1},
+            VarRequirement{B::DEEPFIN_MINE_EAST_BANK, VarbitID::AMENITY_BANKCHEST_DEEPFIN_2, 1}}) {
         reset();
         varbits[id] = minimum - 1;
         CHECK(!canUse(bank));

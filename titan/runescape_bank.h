@@ -110,6 +110,16 @@ enum class RunescapeBank {
     VARLAMORE_HUNTERS_GUILD_BANK,
     PORT_KHAZARD_BANK,
     ONYX_CREST_BANK,
+    CHARRED_ISLAND_BANK,
+    GREAT_CONCH_BANK,
+    PORT_ROBERTS_BANK,
+    RED_ROCK_BANK,
+    WYRMSCRAIG_BANK,
+    SUNBLEAK_ISLAND_BANK,
+    BUCCANEERS_HAVEN_BANK,
+    DEEPFIN_POINT,
+    DEEPFIN_MINE_WEST_BANK,
+    DEEPFIN_MINE_EAST_BANK,
     GUARDIANS_OF_THE_RIFT,
     INFERNO,
 };
@@ -213,6 +223,16 @@ inline constexpr std::array kBanks = {
     BankDefinition{RunescapeBank::VARLAMORE_HUNTERS_GUILD_BANK, {1542, 3040, 0, WorldView::TOP_LEVEL}},
     BankDefinition{RunescapeBank::PORT_KHAZARD_BANK, {2661, 3162, 0, WorldView::TOP_LEVEL}},
     BankDefinition{RunescapeBank::ONYX_CREST_BANK, {2466, 5232, 0, WorldView::TOP_LEVEL}},
+    BankDefinition{RunescapeBank::CHARRED_ISLAND_BANK, {2654, 2387, 0, WorldView::TOP_LEVEL}},
+    BankDefinition{RunescapeBank::GREAT_CONCH_BANK, {3182, 2419, 0, WorldView::TOP_LEVEL}},
+    BankDefinition{RunescapeBank::PORT_ROBERTS_BANK, {1883, 3315, 0, WorldView::TOP_LEVEL}},
+    BankDefinition{RunescapeBank::RED_ROCK_BANK, {2808, 2521, 0, WorldView::TOP_LEVEL}},
+    BankDefinition{RunescapeBank::WYRMSCRAIG_BANK, {2587, 2259, 0, WorldView::TOP_LEVEL}},
+    BankDefinition{RunescapeBank::SUNBLEAK_ISLAND_BANK, {2195, 2314, 0, WorldView::TOP_LEVEL}},
+    BankDefinition{RunescapeBank::BUCCANEERS_HAVEN_BANK, {2097, 3686, 0, WorldView::TOP_LEVEL}},
+    BankDefinition{RunescapeBank::DEEPFIN_POINT, {1936, 2755, 0, WorldView::TOP_LEVEL}},
+    BankDefinition{RunescapeBank::DEEPFIN_MINE_WEST_BANK, {2011, 9186, 0, WorldView::TOP_LEVEL}},
+    BankDefinition{RunescapeBank::DEEPFIN_MINE_EAST_BANK, {2094, 9197, 0, WorldView::TOP_LEVEL}},
     BankDefinition{RunescapeBank::GUARDIANS_OF_THE_RIFT, {3618, 9473, 0, WorldView::TOP_LEVEL}},
     BankDefinition{RunescapeBank::INFERNO, {2542, 5141, 0, WorldView::TOP_LEVEL}},
 };
@@ -290,7 +310,9 @@ inline bool canUse(RunescapeBank bank) {
     case RunescapeBank::CORSAIR_COVE:
         return detail::questFinished(Q::QUEST_CORSAIRCURSE);
     case RunescapeBank::CRAFTING_GUILD:
-        return state::skills().real(Skill::CRAFTING) >= 99;
+        return state::skills().real(Skill::CRAFTING) >= 99
+            || state::vars().varbit(V::FALADOR_DIARY_HARD_COMPLETE) > 0
+            || state::vars().varbit(V::FALADOR_DIARY_ELITE_COMPLETE) > 0;
     case RunescapeBank::FARMING_GUILD:
         return state::skills().real(Skill::FARMING) >= 45;
     case RunescapeBank::FARMING_GUILD_NORTH:
@@ -361,6 +383,28 @@ inline bool canUse(RunescapeBank bank) {
         const auto location = player ? player->fromLocalInstance() : std::nullopt;
         return location && location->regionId() == 11811;
     }
+    case RunescapeBank::CHARRED_ISLAND_BANK:
+        return state::vars().varbit(V::AMENITY_BANKCHEST_CHARRED_ISLAND) > 0;
+    case RunescapeBank::GREAT_CONCH_BANK:
+        // The Great Conch becomes reachable once the bandage has been given to Floopa in Troubled Tortugans.
+        return state::skills().real(Skill::SAILING) >= 45 && state::vars().varbit(V::TT) >= 8;
+    case RunescapeBank::PORT_ROBERTS_BANK:
+        return state::skills().real(Skill::SAILING) >= 50;
+    case RunescapeBank::RED_ROCK_BANK:
+        // Red Rock becomes reachable at the stage of The Red Reef that sends the player there.
+        return state::skills().real(Skill::SAILING) >= 52 && state::vars().varbit(V::TRR) >= 10;
+    case RunescapeBank::WYRMSCRAIG_BANK:
+        return state::vars().varbit(V::AMENITY_BANKCHEST_WYRMSCRAIG) > 0;
+    case RunescapeBank::SUNBLEAK_ISLAND_BANK:
+        return state::vars().varbit(V::AMENITY_BANKCHEST_SUNBLEAK) > 0;
+    case RunescapeBank::BUCCANEERS_HAVEN_BANK:
+        return state::vars().varbit(V::AMENITY_BANKCHEST_BUCCANEERS) > 0;
+    case RunescapeBank::DEEPFIN_POINT:
+        return state::skills().real(Skill::SAILING) >= 67;
+    case RunescapeBank::DEEPFIN_MINE_WEST_BANK:
+        return state::vars().varbit(V::AMENITY_BANKCHEST_DEEPFIN_1) > 0;
+    case RunescapeBank::DEEPFIN_MINE_EAST_BANK:
+        return state::vars().varbit(V::AMENITY_BANKCHEST_DEEPFIN_2) > 0;
     case RunescapeBank::GUARDIANS_OF_THE_RIFT:
         return detail::questFinished(Q::QUEST_TEMPLEOFTHEEYE);
     case RunescapeBank::INFERNO:

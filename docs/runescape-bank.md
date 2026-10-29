@@ -1,6 +1,6 @@
 # Bank destinations (C++)
 
-`<titan/runescape_bank.h>` provides the 92 named destinations from PaistiUtils
+`<titan/runescape_bank.h>` provides the 102 named destinations from PaistiUtils
 `PathFinding/Locations/RunescapeBank.java`, in their original order.
 
 ```cpp
@@ -49,8 +49,8 @@ every bank or every access requirement. In particular:
 
 - Entries without predicates always return true, even without a backend.
   Members-world checks are not universal.
-- Crafting Guild retains the source's 99 Crafting requirement; diary-based
-  alternatives are not modeled. Skill gates use real levels, not boosts.
+- Crafting Guild needs 99 Crafting or the hard or elite Falador diary. Skill
+  gates use real levels, not boosts.
 - Motherlode Mine delegates to `titan::utils::Pickaxe::hasUsablePickaxe()` in
   `<titan/utils/tools/pickaxe.h>` for supported IDs, Mining levels, membership, and
   the crystal-pickaxe quest gate, or allows being
