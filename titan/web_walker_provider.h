@@ -152,11 +152,22 @@ inline constexpr const char* kWebWalkerProviderV3ServiceId =
 inline constexpr uint32_t kWebWalkerProviderV3ApiVersion = 3;
 /// Most destinations, and most starts, one V3 path request may list.
 inline constexpr uint32_t kWebPathV3MaxEndpoints = 4096;
-/// Largest cost, in ABI points, a V3 request may add to one move or one
-/// destination. It keeps every added cost far below the provider's cost range.
+/// Largest cost, in ABI points, a V3 request may add to one destination. It
+/// keeps every added cost far below the provider's cost range.
 inline constexpr uint32_t kWebPathV3MaxExtraCost = 1'000'000;
-/// A Wilderness move cost that forbids the move instead of pricing it.
-inline constexpr uint32_t kWebPathV3BlockedCost = 0xFFFF'FFFFu;
+
+/// How hard a V3 route keeps out of the Wilderness. Soft and Hard also make
+/// every step inside it cost extra, so a route that has to be there leaves by
+/// the shortest way.
+namespace WebPathWildernessAvoidance {
+inline constexpr uint32_t None = 0;
+/// Entering costs as much as a long detour, so a route crosses the
+/// Wilderness only when that saves a lot.
+inline constexpr uint32_t Soft = 1;
+/// Entering is forbidden, unless a destination lies inside the Wilderness:
+/// then entering costs as with Soft. A route starting inside can still leave.
+inline constexpr uint32_t Hard = 2;
+}  // namespace WebPathWildernessAvoidance
 
 /// Route families a V3 path request may use, one bit each.
 namespace WebPathTransport {
@@ -233,17 +244,7 @@ struct WebPathRequestV3State {
     uint32_t timeoutMs = TitanPluginSdk::kWebPathDefaultTimeoutMs;
     /// Inclusive cap on the route's total cost; zero means none.
     uint32_t maxCost = 0;
-    /// Extra cost of each walked step from one Wilderness tile to another. It
-    /// cannot be blocked, so a route starting inside can always walk out.
-    uint32_t wildernessWalkInsideCost = 0;
-    /// Extra cost of walking onto a Wilderness tile from outside it, or
-    /// kWebPathV3BlockedCost. Blocking it still lets a route starting inside
-    /// walk out, and rules out every destination that only the Wilderness
-    /// leads to.
-    uint32_t wildernessWalkEntryCost = 0;
-    /// Extra cost of a transport or teleport landing in the Wilderness from
-    /// outside it, or kWebPathV3BlockedCost.
-    uint32_t wildernessEdgeEntryCost = 0;
+    uint32_t wildernessAvoidance = WebPathWildernessAvoidance::Hard;
 };
 
 /// A V3 walk. Walks always plan from the local player: the path's starts must
@@ -314,8 +315,8 @@ static_assert(std::is_standard_layout_v<WebWalkRequestV3State>);
 static_assert(std::is_standard_layout_v<WebWalkerProviderV3>);
 static_assert(std::is_trivially_copyable_v<WebWalkerProviderV3>);
 static_assert(sizeof(WebPathDestinationState) == 24);
-static_assert(sizeof(WebPathRequestV3State) == 64);
-static_assert(sizeof(WebWalkRequestV3State) == 88);
+static_assert(sizeof(WebPathRequestV3State) == 56);
+static_assert(sizeof(WebWalkRequestV3State) == 80);
 static_assert(sizeof(WebWalkerProviderV3) == 104);
 static_assert(offsetof(WebWalkerProviderV3, walkStart) == 64);
 
