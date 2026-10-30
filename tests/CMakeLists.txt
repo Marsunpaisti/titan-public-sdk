@@ -24,6 +24,10 @@ add_executable(runescape_bank_test runescape_bank_test.cpp)
 target_link_libraries(runescape_bank_test PRIVATE titan_sdk)
 add_test(NAME runescape_bank COMMAND runescape_bank_test)
 
+add_executable(web_walker_v3_test web_walker_v3_test.cpp)
+target_link_libraries(web_walker_v3_test PRIVATE titan_sdk)
+add_test(NAME web_walker_v3 COMMAND web_walker_v3_test)
+
 add_executable(pickaxe_test pickaxe_test.cpp)
 target_link_libraries(pickaxe_test PRIVATE titan_sdk)
 add_test(NAME pickaxe COMMAND pickaxe_test)
