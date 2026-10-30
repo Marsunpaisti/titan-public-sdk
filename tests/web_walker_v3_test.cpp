@@ -103,7 +103,6 @@ int main() {
     CHECK(pathRequest.flags == rawPath.flags);
     CHECK(pathRequest.transports == rawPath.transports);
     CHECK(pathRequest.timeoutMs == rawPath.timeoutMs);
-    CHECK(pathRequest.maxCost == rawPath.maxCost);
     CHECK(pathRequest.wildernessAvoidance == rawPath.wildernessAvoidance);
     CHECK(destinations.size() == 1 && hasDestination(varrock) && destinations[0].costOffset == 0);
 
@@ -113,13 +112,11 @@ int main() {
     options.partialWithinThreeTiles = false;
     options.wilderness = WildernessAvoidance::Soft;
     options.transports = WebPathTransport::FairyRings;
-    options.maxCost = 500;
     const WorldPoint lumbridge{3222, 3218, 0};
     CHECK(webWalkerV3().submit({{varrock}, {lumbridge, 40}}, options, {{lumbridge, 15}}) == 7u);
     CHECK(pathRequest.flags == WebPathV3Flag::AllowBanking);
     CHECK(pathRequest.wildernessAvoidance == WebPathWildernessAvoidance::Soft);
     CHECK(pathRequest.transports == WebPathTransport::FairyRings);
-    CHECK(pathRequest.maxCost == 500);
     CHECK(destinations.size() == 2 && destinations[1].costOffset == 40);
     CHECK(starts.size() == 1 && starts[0].tile.x == lumbridge.x && starts[0].costOffset == 15);
 

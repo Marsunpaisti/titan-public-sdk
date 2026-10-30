@@ -41,9 +41,6 @@ struct WebPathV3Options {
     bool allowBanking = false;
     bool partialWithinThreeTiles = true;
     WildernessAvoidance wilderness = WildernessAvoidance::Hard;
-    /// Inclusive cap on the route's cost plus its endpoints' costOffsets, in
-    /// cost points; zero means none.
-    uint32_t maxCost = 0;
     WebPathRouteSpace routeSpace = WebPathRouteSpace::Global;
     std::chrono::milliseconds timeout{TitanPluginSdk::kWebPathDefaultTimeoutMs};
 };
@@ -101,7 +98,6 @@ inline WebPathRequestV3State webPathRequestV3(
     request.transports = options.transports;
     request.timeoutMs = static_cast<uint32_t>(std::clamp<int64_t>(
         options.timeout.count(), 1, TitanPluginSdk::kWebPathMaxTimeoutMs));
-    request.maxCost = options.maxCost;
     request.wildernessAvoidance = static_cast<uint32_t>(options.wilderness);
     return request;
 }

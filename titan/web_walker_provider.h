@@ -249,9 +249,6 @@ struct WebPathRequestV3State {
     uint32_t flags = WebPathV3Flag::Default;
     uint32_t transports = WebPathTransport::Default;
     uint32_t timeoutMs = TitanPluginSdk::kWebPathDefaultTimeoutMs;
-    /// Inclusive cap on the route's cost plus its start's and destination's
-    /// costOffsets; zero means none.
-    uint32_t maxCost = 0;
     uint32_t wildernessAvoidance = WebPathWildernessAvoidance::Hard;
 };
 
