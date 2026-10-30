@@ -211,8 +211,10 @@ inline constexpr uint32_t UseLocalPlayer          = 1u << 0;
 /// Plan bank visits that withdraw what a route needs, such as fares, passes
 /// and teleport items. Only bank contents the client has seen count.
 inline constexpr uint32_t AllowBanking            = 1u << 1;
-/// When no destination is reachable, accept the cheapest route ending within
-/// three tiles of one, reported as PartialWithinThreeTiles.
+/// Also accept routes ending within three tiles of a destination, reported as
+/// PartialWithinThreeTiles. Each tile short of it ranks the route as if it
+/// walked 5,000 more tiles, so one wins only when no destination is reachable
+/// without such a detour, counting costOffsets. Reported costs leave that out.
 inline constexpr uint32_t PartialWithinThreeTiles = 1u << 2;
 
 inline constexpr uint32_t Default = UseLocalPlayer | PartialWithinThreeTiles;
