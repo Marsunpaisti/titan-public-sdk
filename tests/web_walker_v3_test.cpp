@@ -16,6 +16,7 @@ WebWalkRequestV3State walkRequest;
 std::vector<WebPathDestinationState> destinations;
 std::vector<WebPathStartState> starts;
 bool providerAvailable = true;
+uint64_t cancelledWalk = ~uint64_t{0};
 int openLeases = 0;
 
 void capture(const WebPathRequestV3State& request) {
@@ -56,9 +57,14 @@ WebWalkerProviderV3 makeProvider() {
         return 1;
     };
     provider.walkStatus = [](void*, uint64_t, TitanPluginSdk::WebWalkStatusState*) -> uint8_t { return 0; };
-    provider.walkCancel = [](void*, uint64_t) -> uint8_t { return 1; };
+    provider.walkCancel = [](void*, uint64_t walkId) -> uint8_t {
+        cancelledWalk = walkId;
+        return 1;
+    };
     provider.walkRelease = [](void*, uint64_t) -> uint8_t { return 1; };
     provider.walkAdvance = [](void*, uint64_t) -> uint8_t { return 1; };
+    provider.walkCopySteps = [](void*, uint64_t, TitanPluginSdk::WebPathStepState* out, uint32_t capacity,
+                                uint32_t* outCount) { return fillSteps(out, capacity, outCount); };
     return provider;
 }
 
@@ -125,11 +131,14 @@ int main() {
     CHECK(hasDestination(*RunescapeBankInfo::getLocation(RunescapeBank::GRAND_EXCHANGE)));
     CHECK(!hasDestination(*RunescapeBankInfo::getLocation(RunescapeBank::BLAST_FURNACE_BANK)));
 
-    // The V3 provider and the host fill the same step records.
-    for (const auto& steps : {webWalkerV3().copySteps(7), webWalker().copySteps(7)}) {
+    // The V3 provider and the host fill the same step records, for paths and for the latest walk alike.
+    for (const auto& steps : {webWalkerV3().copySteps(7), webWalker().copySteps(7), webWalkV3().copySteps(0)}) {
         CHECK(steps && steps->size() == 2);
         CHECK((*steps)[1].kind == WebPathStepKind::Teleport && (*steps)[1].name == "Varrock Teleport");
     }
+
+    // Handle 0 reaches the provider, which reads it as the active walk whoever started it.
+    CHECK(webWalkV3().cancel(0) && cancelledWalk == 0);
 
     CHECK(openLeases == 0);
     providerAvailable = false;

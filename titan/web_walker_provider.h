@@ -280,7 +280,9 @@ struct WebWalkRequestV3State {
 /// Callbacks keep V2's threading, ownership and return conventions, and
 /// handles are shared with V2: one walk drives the player whichever version
 /// started it. The host advances automatic walks of both versions through
-/// V2's walkTick, so a V3 provider must also publish V2.
+/// V2's walkTick, so a V3 provider must also publish V2. As in V2, walk handle
+/// 0 addresses the latest walk for walkStatus and walkCopySteps, and the
+/// active walk for walkCancel and walkAdvance, whichever plugin started it.
 struct WebWalkerProviderV3 {
     uint32_t structSize = sizeof(WebWalkerProviderV3);
     uint32_t apiVersion = kWebWalkerProviderV3ApiVersion;
@@ -315,6 +317,13 @@ struct WebWalkerProviderV3 {
     uint8_t (*walkRelease)(void* userData, uint64_t providerWalkId) = nullptr;
     /// Game thread only.
     uint8_t (*walkAdvance)(void* userData, uint64_t providerWalkId) = nullptr;
+    /// The route the walk follows, as pathCopySteps reports one; the status's
+    /// currentStepIndex indexes it. While a walk plans its first route this is
+    /// empty, and while it replans it keeps the previous route.
+    uint8_t (*walkCopySteps)(
+        void* userData, uint64_t providerWalkId,
+        TitanPluginSdk::WebPathStepState* outSteps,
+        uint32_t capacity, uint32_t* outCount) = nullptr;
 };
 
 static_assert(std::is_standard_layout_v<WebPathRequestV3State>);
@@ -325,7 +334,7 @@ static_assert(sizeof(WebPathDestinationState) == 24);
 static_assert(sizeof(WebPathStartState) == 24);
 static_assert(sizeof(WebPathRequestV3State) == 56);
 static_assert(sizeof(WebWalkRequestV3State) == 80);
-static_assert(sizeof(WebWalkerProviderV3) == 104);
+static_assert(sizeof(WebWalkerProviderV3) == 112);
 static_assert(offsetof(WebWalkerProviderV3, walkStart) == 64);
 
 inline bool validWebWalkerProviderV3(
@@ -336,7 +345,8 @@ inline bool validWebWalkerProviderV3(
         && provider->pathSubmit && provider->pathPoll && provider->pathCopySteps
         && provider->pathCopyStepPayload && provider->pathCancel
         && provider->pathRelease && provider->walkStart && provider->walkStatus
-        && provider->walkCancel && provider->walkRelease && provider->walkAdvance;
+        && provider->walkCancel && provider->walkRelease && provider->walkAdvance
+        && provider->walkCopySteps;
 }
 
 }  // namespace titan

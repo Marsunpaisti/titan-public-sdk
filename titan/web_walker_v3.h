@@ -193,7 +193,9 @@ public:
 
 /// Walks the local player through the provider's V3 service. Walk handles are
 /// shared with webWalk(): one session per client, and a new walk supersedes
-/// the previous one whichever version started it.
+/// the previous one whichever version started it. Handle 0 addresses the
+/// latest walk for status() and copySteps(), and the active walk for cancel()
+/// and advance(), whichever plugin started it.
 class WebWalkV3Facade {
 public:
     std::optional<WebWalkHandle> walkTo(
@@ -252,15 +254,29 @@ public:
 
     std::optional<WebWalkStatus> status(WebWalkHandle handle) const {
         auto provider = detail::webWalkerProviderV3();
-        if (!provider || handle == 0) return std::nullopt;
+        if (!provider) return std::nullopt;
         return detail::webWalkStatus([&](auto* out) {
             return provider->walkStatus(provider->userData, handle, out);
         });
     }
 
+    /// The route the walk follows; status().currentStepIndex indexes it. Empty
+    /// while the walk plans its first route.
+    std::optional<std::vector<WebPathStep>> copySteps(
+            WebWalkHandle handle) const {
+        auto provider = detail::webWalkerProviderV3();
+        if (!provider) return std::nullopt;
+        return detail::copyWebPathSteps(
+            [&](TitanPluginSdk::WebPathStepState* out, uint32_t capacity,
+                uint32_t* outCount) {
+                return provider->walkCopySteps(
+                    provider->userData, handle, out, capacity, outCount);
+            });
+    }
+
     bool cancel(WebWalkHandle handle) const {
         auto provider = detail::webWalkerProviderV3();
-        return provider && handle != 0
+        return provider
             && provider->walkCancel(provider->userData, handle) != 0;
     }
 
@@ -274,7 +290,7 @@ public:
     /// game tick from onGameTick.
     bool advance(WebWalkHandle handle) const {
         auto provider = detail::webWalkerProviderV3();
-        return provider && handle != 0
+        return provider
             && provider->walkAdvance(provider->userData, handle) != 0;
     }
 };
