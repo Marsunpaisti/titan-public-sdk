@@ -715,8 +715,10 @@ side-panel badges use, so a pill matches the plugin's own panel.
   or reloading the plugin (or rebuilding the JS runtime) drops every pill it
   set, so a pill never outlives the plugin that drew it.
 - **Where they show.** Over the tab's thumbnail on the Home grid, stacked
-  from its top-left corner; hovering one names the plugin that set it. Never
-  in the game view.
+  from its top-left corner; hovering one names the plugin that set it. While
+  the client is at the login screen the same pills are also drawn in the
+  top-left corner of the game view, so a tab waiting there says why. Never
+  over the game once logged in.
 - **Threading.** Every call takes only the host's pill-store lock, so it is
   safe from any thread and from inside your own locks. Calls from the
   plugin's constructor fail: the host binds the plugin once it has wrapped

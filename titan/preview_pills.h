@@ -25,8 +25,10 @@
 ///
 /// Only an enabled plugin may set a pill, and disabling, unloading or
 /// reloading the plugin drops every pill it set, so pills never outlive the
-/// plugin that drew them. Pills appear on the tab's Home-grid card only,
-/// never in the game view. See PUBLIC_API.md ("Preview pills").
+/// plugin that drew them. Pills appear on the tab's Home-grid card, and in
+/// the top-left corner of the game view while the client is at the login
+/// screen (a tab waiting there says why); never over the game once logged
+/// in. See PUBLIC_API.md ("Preview pills").
 ///
 /// Every call is safe from any thread and from inside the plugin's own locks.
 /// Calls from the plugin's constructor fail: the host binds the plugin only
