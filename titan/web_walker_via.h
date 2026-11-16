@@ -36,6 +36,10 @@
 
 namespace titan {
 
+/// This header declares WebWalkerViaV1::submitAvoiding. An engine built
+/// against an earlier copy of the contract publishes the table without it.
+#define TITAN_WEB_WALKER_VIA_AVOIDING 1
+
 inline constexpr const char* kWebWalkerViaServiceId = "titan.web_walker.via.v1";
 inline constexpr uint32_t kWebWalkerViaApiVersion = 1;
 /// The most via points one request may name.
@@ -88,6 +92,20 @@ struct WebWalkerViaV1 {
     uint8_t (*cancel)(void* userData, uint64_t requestId) = nullptr;
     /// Forget a request. Every submitted request must be released.
     uint8_t (*release)(void* userData, uint64_t requestId) = nullptr;
+
+    /// Appended after the first release of this contract: present only when
+    /// `structSize` covers it (webWalkerViaAvoids). The same request, with
+    /// tiles and areas neither leg may enter: `forbidden` is the array
+    /// `HostApi::webPathSubmit` takes, areas included (see
+    /// <titan/web_walker_areas.h>), up to kWebPathMaxForbiddenTiles entries.
+    uint8_t (*submitAvoiding)(
+        void* userData,
+        const TitanPluginSdk::WebPathRequestState* request,
+        const TitanPluginSdk::WorldPointState* forbidden,
+        uint32_t forbiddenCount,
+        const TitanPluginSdk::WorldPointState* viaPoints,
+        uint32_t viaPointCount,
+        uint64_t* outRequestId) = nullptr;
 };
 
 static_assert(std::is_standard_layout_v<WebWalkerViaResult>);
@@ -97,17 +115,29 @@ static_assert(std::is_trivially_copyable_v<WebWalkerViaV1>);
 static_assert(sizeof(WebWalkerViaResult) == 64 + TitanPluginSdk::kWebPathMessageCapacity);
 static_assert(offsetof(WebWalkerViaResult, viaIndex) == 24);
 static_assert(offsetof(WebWalkerViaResult, reachedVia) == 48);
-static_assert(sizeof(WebWalkerViaV1) == 48);
+static_assert(sizeof(WebWalkerViaV1) == 56);
 static_assert(offsetof(WebWalkerViaV1, submit) == 16);
+static_assert(offsetof(WebWalkerViaV1, submitAvoiding) == 48);
+
+/// The size of the table as first released: everything before submitAvoiding.
+inline constexpr uint32_t kWebWalkerViaV1PrefixSize = 48;
 
 /// Validate a resolved table before use. Appended fields are allowed; the
 /// complete V1 prefix is mandatory.
 inline bool validWebWalkerViaV1(const WebWalkerViaV1* service) noexcept {
     return service
-        && service->structSize >= sizeof(WebWalkerViaV1)
+        && service->structSize >= kWebWalkerViaV1PrefixSize
         && service->apiVersion == kWebWalkerViaApiVersion
         && service->submit && service->poll
         && service->cancel && service->release;
+}
+
+/// Whether a valid table also carries submitAvoiding. A table published by
+/// an engine that predates it is shorter and must not be read that far.
+inline bool webWalkerViaAvoids(const WebWalkerViaV1* service) noexcept {
+    return validWebWalkerViaV1(service)
+        && service->structSize >= sizeof(WebWalkerViaV1)
+        && service->submitAvoiding;
 }
 
 }  // namespace titan

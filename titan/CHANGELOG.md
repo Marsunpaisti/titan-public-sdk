@@ -18,6 +18,20 @@ in `PUBLIC_API.md`.
 
 ## v176 -- Named widget interactions
 
+- `+` Web walker requests can name whole areas to avoid:
+  `WebPathRequest::forbiddenAreas` and `WebWalkOptions::forbiddenAreas` take
+  `titan::WorldArea`s. To the walker an area is every one of its tiles (no
+  step, transport or teleport may end inside it). Header-only
+  `<titan/web_walker_areas.h>` is the wire convention: an area rides in the
+  existing forbidden array as two tagged entries, so there is no HostApi,
+  PluginApi, payload or SDK version change and no host change. An engine
+  that predates areas does not avoid them; `<titan/web_walker.h>` therefore
+  also sends each area's outline as ordinary tiles by default
+  (`outlineForbiddenAreas`).
+- `+` `WebWalkerViaV1::submitAvoiding` (appended; `webWalkerViaAvoids`): a via
+  request with tiles and areas neither leg may enter. A table published by
+  an earlier engine is shorter; `validWebWalkerViaV1` still accepts it.
+
 - `+` Header-only `<titan/web_walker_via.h>`: the POD contract of the
   WebWalker Engine's optional `titan.web_walker.via.v1` plugin service (the
   cheapest trip through one of several via points, in one request). No

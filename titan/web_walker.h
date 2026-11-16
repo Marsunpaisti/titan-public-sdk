@@ -4,6 +4,8 @@
 #pragma once
 
 #include "detail/backend.h"
+#include "web_walker_areas.h"
+#include "world_area.h"
 #include "world_point.h"
 
 #include <algorithm>
@@ -90,6 +92,20 @@ struct WebPathRequest {
     std::chrono::milliseconds timeout{TitanPluginSdk::kWebPathDefaultTimeoutMs};
     bool useLocalPlayer = true;
     std::vector<WorldPoint> forbiddenTiles;
+    /// Whole areas the route may not enter (canonical world tiles; an
+    /// area's world view is not consulted). To the walker an area is every
+    /// one of its tiles: no walking step, transport or teleport may end
+    /// inside it. A request that starts inside an area can only leave across
+    /// its edge, and a destination inside one has no route, so leave out any
+    /// area the trip must begin or end in. Each area takes two of the
+    /// kWebPathMaxForbiddenTiles entries a request may send, whatever its
+    /// size (see <titan/web_walker_areas.h>).
+    std::vector<WorldArea> forbiddenAreas;
+    /// Also send each area's outline as ordinary forbidden tiles, as far as
+    /// the entry limit allows. A WebWalker Engine that predates areas does
+    /// not avoid them, but cannot walk across an outline. Turn this off once
+    /// every engine the plugin runs with honours areas.
+    bool outlineForbiddenAreas = true;
 };
 
 struct WebPathSummary {
@@ -143,6 +159,37 @@ inline WorldPoint fromWebPointState(
     return {point.x, point.y, point.z, point.worldViewId};
 }
 
+/// The forbidden array of a request: its tiles, then its areas (see
+/// <titan/web_walker_areas.h>), then, when asked for, as much of the areas'
+/// outlines as still fits. Empty optional when the tiles and areas alone
+/// are more than a request may send.
+inline std::optional<std::vector<TitanPluginSdk::WorldPointState>>
+webForbiddenStates(const std::vector<WorldPoint>& tiles,
+                   const std::vector<WorldArea>& areas, bool outlines) {
+    std::vector<TitanPluginSdk::WorldPointState> forbidden;
+    forbidden.reserve(tiles.size() + areas.size() * 2);
+    for (const auto& point : tiles) {
+        forbidden.push_back(toWebPointState(point));
+    }
+    for (const auto& area : areas) {
+        appendWebPathForbiddenArea(forbidden, area.x, area.y, area.width,
+                                   area.height, area.plane);
+    }
+    if (forbidden.size() > TitanPluginSdk::kWebPathMaxForbiddenTiles) {
+        return std::nullopt;
+    }
+    if (outlines) {
+        for (const auto& area : areas) {
+            if (!appendWebPathForbiddenOutline(
+                    forbidden, area.x, area.y, area.width, area.height,
+                    area.plane, TitanPluginSdk::kWebPathMaxForbiddenTiles)) {
+                break;
+            }
+        }
+    }
+    return forbidden;
+}
+
 template <size_t N>
 inline std::string fixedWebString(const char (&value)[N]) {
     size_t length = 0;
@@ -155,10 +202,11 @@ class WebWalkerFacade {
 public:
     std::optional<WebPathHandle> submit(const WebPathRequest& request) const {
         auto* backend = detail::backend();
-        if (!backend || request.forbiddenTiles.size()
-                > TitanPluginSdk::kWebPathMaxForbiddenTiles) {
-            return std::nullopt;
-        }
+        const auto states = detail::webForbiddenStates(
+            request.forbiddenTiles, request.forbiddenAreas,
+            request.outlineForbiddenAreas);
+        if (!backend || !states) return std::nullopt;
+        const auto& forbidden = *states;
 
         TitanPluginSdk::WebPathRequestState state{};
         state.start = detail::toWebPointState(request.start);
@@ -171,12 +219,6 @@ public:
         state.timeoutMs = static_cast<uint32_t>(timeout);
         state.requestFlags = request.useLocalPlayer
             ? TitanPluginSdk::WebPathRequestFlag::UseLocalPlayer : 0;
-
-        std::vector<TitanPluginSdk::WorldPointState> forbidden;
-        forbidden.reserve(request.forbiddenTiles.size());
-        for (const auto& point : request.forbiddenTiles) {
-            forbidden.push_back(detail::toWebPointState(point));
-        }
 
         WebPathHandle handle = 0;
         if (!backend->webPathSubmit(
@@ -319,6 +361,12 @@ struct WebWalkOptions {
     std::chrono::milliseconds planTimeout{
         TitanPluginSdk::kWebPathDefaultTimeoutMs};
     std::vector<WorldPoint> forbiddenTiles;
+    /// Whole areas the walk may not enter, on every plan and replan; see
+    /// WebPathRequest::forbiddenAreas. Leave out any area the walk begins or
+    /// ends in.
+    std::vector<WorldArea> forbiddenAreas;
+    /// See WebPathRequest::outlineForbiddenAreas.
+    bool outlineForbiddenAreas = true;
     bool manageRun = true;
     bool drinkStamina = false;
     /// Drive the session yourself by calling advance() once per game tick
@@ -354,11 +402,11 @@ public:
             const WorldPoint& destination,
             const WebWalkOptions& options = {}) const {
         auto* backend = detail::backend();
-        if (!backend
-            || options.forbiddenTiles.size()
-                > TitanPluginSdk::kWebPathMaxForbiddenTiles) {
-            return std::nullopt;
-        }
+        const auto states = detail::webForbiddenStates(
+            options.forbiddenTiles, options.forbiddenAreas,
+            options.outlineForbiddenAreas);
+        if (!backend || !states) return std::nullopt;
+        const auto& forbidden = *states;
 
         TitanPluginSdk::WebWalkRequestState state{};
         state.path.destination = detail::toWebPointState(destination);
@@ -379,12 +427,6 @@ public:
                    ? TitanPluginSdk::WebWalkFlag::ManualTick : 0u);
         state.arriveRadius = options.arriveRadius;
         state.maxDurationTicks = options.maxDurationTicks;
-
-        std::vector<TitanPluginSdk::WorldPointState> forbidden;
-        forbidden.reserve(options.forbiddenTiles.size());
-        for (const auto& point : options.forbiddenTiles) {
-            forbidden.push_back(detail::toWebPointState(point));
-        }
 
         uint64_t walkId = 0;
         if (backend->webWalkStart(
