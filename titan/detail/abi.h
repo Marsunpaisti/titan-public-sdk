@@ -4475,7 +4475,8 @@ struct HostApi {
     /// action for the next client tick. When the click target is a dynamic
     /// child, the click point is constrained to the parent widget's screen
     /// bounds (SDK 124+): child-parent intersection when they overlap, a
-    /// random point inside the parent when the child lies outside it.
+    /// random point inside the parent when the child lies outside it. For a
+    /// scrolled-out bank item, the host prefers a random visible stocked slot.
     /// Returns 1 when the action was
     /// accepted (the game may still reject invalid widget / slot combos).
     uint8_t (*widgetInteract)(uint32_t opcode, int32_t identifier,
