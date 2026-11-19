@@ -128,7 +128,6 @@ int main() {
         {B::PRIFDDINAS, 137},
         {B::GUARDIANS_OF_THE_RIFT, 167}, {B::VARLAMORE_EAST_BANK, 3450},
         {B::VARLAMORE_WEST_BANK, 3450}, {B::QUETZAL_GORGE_BANK, 3450},
-        {B::VARLAMORE_HUNTERS_GUILD_BANK, 3450},
     };
     for (const auto& [bank, rowId] : finishedQuests) {
         reset();
@@ -210,6 +209,16 @@ int main() {
         quests[3450] = 0;
         CHECK(!canUse(bank));
     }
+    reset();
+    quests[3450] = 2;
+    varbits[VarbitID::VMQ2_FIRST_TRAVEL] = 3;
+    skills[static_cast<int32_t>(Skill::HUNTER)] = 45;
+    CHECK(!canUse(B::VARLAMORE_HUNTERS_GUILD_BANK));
+    skills[static_cast<int32_t>(Skill::HUNTER)] = 46;
+    CHECK(canUse(B::VARLAMORE_HUNTERS_GUILD_BANK));
+    varbits[VarbitID::VMQ2_FIRST_TRAVEL] = 2;
+    CHECK(!canUse(B::VARLAMORE_HUNTERS_GUILD_BANK)); // Like Aldarin, the guild needs Varlamore's travel unlocked.
+
     for (auto bank : {B::ARCEUUS, B::GREAT_KOUREND_CASTLE, B::HOSIDIUS, B::LANDS_END,
                       B::LOVAKENGJ, B::MOUNT_QUIDAMORTEM, B::VINERY_BANK, B::WINTERTODT, B::ZEAH_SAND_BANK}) {
         reset();

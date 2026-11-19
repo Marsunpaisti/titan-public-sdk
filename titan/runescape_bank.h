@@ -290,6 +290,10 @@ inline bool canUse(RunescapeBank bank) {
     case RunescapeBank::TAL_TEKLAN:
         return detail::questFinished(Q::QUEST_CHILDRENOFTHESUN) && detail::membersWorld()
             && state::vars().varbit(V::VMQ2_FIRST_TRAVEL) >= 3;
+    // The bank stands inside the Hunter Guild, which needs 46 Hunter to enter.
+    case RunescapeBank::VARLAMORE_HUNTERS_GUILD_BANK:
+        return detail::questFinished(Q::QUEST_CHILDRENOFTHESUN) && detail::membersWorld()
+            && state::vars().varbit(V::VMQ2_FIRST_TRAVEL) >= 3 && state::skills().real(Skill::HUNTER) >= 46;
     case RunescapeBank::ARCEUUS:
     case RunescapeBank::GREAT_KOUREND_CASTLE:
     case RunescapeBank::HOSIDIUS:
@@ -374,7 +378,6 @@ inline bool canUse(RunescapeBank bank) {
     case RunescapeBank::VARLAMORE_EAST_BANK:
     case RunescapeBank::VARLAMORE_WEST_BANK:
     case RunescapeBank::QUETZAL_GORGE_BANK:
-    case RunescapeBank::VARLAMORE_HUNTERS_GUILD_BANK:
         return detail::questFinished(Q::QUEST_CHILDRENOFTHESUN);
     case RunescapeBank::ONYX_CREST_BANK: {
         if (state::vars().varbit(V::AMENITY_BANKCHEST_ONYX_CREST) <= 0) return false;
