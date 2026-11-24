@@ -38,7 +38,8 @@ struct WebPathEndpoint {
 /// worldViewId is not sent.
 struct WebPathCostZone {
     WorldArea area{};
-    /// Cost points per tile entered inside. At most kWebPathV3MaxExtraCost.
+    /// Cost points per tile entered inside. kWebPathCostZoneForbidden or more
+    /// forbids entering the area.
     uint32_t costPerTile = 0;
 };
 

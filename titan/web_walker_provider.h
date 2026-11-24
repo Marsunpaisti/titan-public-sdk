@@ -238,9 +238,16 @@ struct WebPathStartState {
 
 /// Most cost zones one V3 path request may list.
 inline constexpr uint32_t kWebPathV3MaxCostZones = 32;
+/// A costPerTile at or above this forbids the zone: no walking step,
+/// transport or teleport may enter it from outside. A route that starts
+/// inside may still move within it, at this cost per tile, so it leaves by
+/// the fewest tiles. It is also the most that overlapping zones add for one
+/// tile.
+inline constexpr uint32_t kWebPathCostZoneForbidden = 100'000;
 
 /// An area a route pays extra to be in, so it goes round the area when that is
-/// cheaper and crosses it when it is not. Overlapping zones add up.
+/// cheaper and crosses it when it is not, or an area it must not enter.
+/// Overlapping zones add up.
 struct WebPathCostZoneState {
     /// South-west tile, in the request's route space; the area runs `width`
     /// tiles east and `height` tiles north, each at least one.
@@ -250,8 +257,8 @@ struct WebPathCostZoneState {
     int32_t height = 0;
     int32_t plane = 0;
     /// Points added for each walking step, transport or teleport that ends on
-    /// a tile inside, so crossing more of the area costs more. At most
-    /// kWebPathV3MaxExtraCost.
+    /// a tile inside, so crossing more of the area costs more. From
+    /// kWebPathCostZoneForbidden up, the zone is forbidden instead.
     uint32_t costPerTile = 0;
 };
 
