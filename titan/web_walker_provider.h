@@ -236,6 +236,25 @@ struct WebPathStartState {
     uint32_t reserved0 = 0;
 };
 
+/// Most cost zones one V3 path request may list.
+inline constexpr uint32_t kWebPathV3MaxCostZones = 32;
+
+/// An area a route pays extra to be in, so it goes round the area when that is
+/// cheaper and crosses it when it is not. Overlapping zones add up.
+struct WebPathCostZoneState {
+    /// South-west tile, in the request's route space; the area runs `width`
+    /// tiles east and `height` tiles north, each at least one.
+    int32_t x = 0;
+    int32_t y = 0;
+    int32_t width = 0;
+    int32_t height = 0;
+    int32_t plane = 0;
+    /// Points added for each walking step, transport or teleport that ends on
+    /// a tile inside, so crossing more of the area costs more. At most
+    /// kWebPathV3MaxExtraCost.
+    uint32_t costPerTile = 0;
+};
+
 /// A V3 route request. The route runs between whichever start and destination
 /// are cheapest, counting their costOffsets. Costs are ABI points, so a walked
 /// tile costs kWebPathWalkCostPoints. Array pointers are borrowed for the call.
@@ -252,6 +271,9 @@ struct WebPathRequestV3State {
     uint32_t transports = WebPathTransport::Default;
     uint32_t timeoutMs = TitanPluginSdk::kWebPathDefaultTimeoutMs;
     uint32_t wildernessAvoidance = WebPathWildernessAvoidance::Hard;
+    /// At most kWebPathV3MaxCostZones.
+    uint32_t costZoneCount = 0;
+    const WebPathCostZoneState* costZones = nullptr;
 };
 
 /// A V3 walk. Walks always plan from the local player: the path's starts must
@@ -332,8 +354,9 @@ static_assert(std::is_standard_layout_v<WebWalkerProviderV3>);
 static_assert(std::is_trivially_copyable_v<WebWalkerProviderV3>);
 static_assert(sizeof(WebPathDestinationState) == 24);
 static_assert(sizeof(WebPathStartState) == 24);
-static_assert(sizeof(WebPathRequestV3State) == 56);
-static_assert(sizeof(WebWalkRequestV3State) == 80);
+static_assert(sizeof(WebPathCostZoneState) == 24);
+static_assert(sizeof(WebPathRequestV3State) == 64);
+static_assert(sizeof(WebWalkRequestV3State) == 88);
 static_assert(sizeof(WebWalkerProviderV3) == 112);
 static_assert(offsetof(WebWalkerProviderV3, walkStart) == 64);
 

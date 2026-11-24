@@ -15,6 +15,7 @@ WebPathRequestV3State pathRequest;
 WebWalkRequestV3State walkRequest;
 std::vector<WebPathDestinationState> destinations;
 std::vector<WebPathStartState> starts;
+std::vector<WebPathCostZoneState> costZones;
 bool providerAvailable = true;
 uint64_t cancelledWalk = ~uint64_t{0};
 int openLeases = 0;
@@ -23,6 +24,7 @@ void capture(const WebPathRequestV3State& request) {
     pathRequest = request;
     destinations.assign(request.destinations, request.destinations + request.destinationCount);
     starts.assign(request.starts, request.starts + request.startCount);
+    costZones.assign(request.costZones, request.costZones + request.costZoneCount);
 }
 
 uint8_t fillSteps(TitanPluginSdk::WebPathStepState* out, uint32_t capacity, uint32_t* outCount) {
@@ -111,6 +113,7 @@ int main() {
     CHECK(pathRequest.timeoutMs == rawPath.timeoutMs);
     CHECK(pathRequest.wildernessAvoidance == rawPath.wildernessAvoidance);
     CHECK(destinations.size() == 1 && hasDestination(varrock) && destinations[0].costOffset == 0);
+    CHECK(costZones.empty());
 
     // Explicit starts replace the local player; each option reaches its own field.
     WebPathV3Options options;
@@ -118,6 +121,7 @@ int main() {
     options.partialWithinThreeTiles = false;
     options.wilderness = WildernessAvoidance::Soft;
     options.transports = WebPathTransport::FairyRings;
+    options.costZones = {{WorldArea{3200, 3400, 5, 3, 1}, 250}};
     const WorldPoint lumbridge{3222, 3218, 0};
     CHECK(webWalkerV3().submit({{varrock}, {lumbridge, 40}}, options, {{lumbridge, 15}}) == 7u);
     CHECK(pathRequest.flags == WebPathV3Flag::AllowBanking);
@@ -125,6 +129,10 @@ int main() {
     CHECK(pathRequest.transports == WebPathTransport::FairyRings);
     CHECK(destinations.size() == 2 && destinations[1].costOffset == 40);
     CHECK(starts.size() == 1 && starts[0].tile.x == lumbridge.x && starts[0].costOffset == 15);
+    CHECK(costZones.size() == 1 && costZones[0].x == 3200 && costZones[0].y == 3400 && costZones[0].width == 5
+          && costZones[0].height == 3 && costZones[0].plane == 1 && costZones[0].costPerTile == 250);
+    options.costZones.resize(kWebPathV3MaxCostZones + 1);
+    CHECK(!webWalkerV3().submit(varrock, options));
 
     // With no quests or diaries done, only banks without requirements are candidates.
     CHECK(webWalkV3().walkToNearestBank());

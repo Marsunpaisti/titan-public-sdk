@@ -34,6 +34,14 @@ struct WebPathEndpoint {
     uint32_t costOffset = 0;
 };
 
+/// An area a route pays extra to be in; see WebPathCostZoneState. The area's
+/// worldViewId is not sent.
+struct WebPathCostZone {
+    WorldArea area{};
+    /// Cost points per tile entered inside. At most kWebPathV3MaxExtraCost.
+    uint32_t costPerTile = 0;
+};
+
 /// Defaults match WebPathRequestV3State's.
 struct WebPathV3Options {
     /// WebPathTransport bits.
@@ -43,6 +51,8 @@ struct WebPathV3Options {
     WildernessAvoidance wilderness = WildernessAvoidance::Hard;
     WebPathRouteSpace routeSpace = WebPathRouteSpace::Global;
     std::chrono::milliseconds timeout{TitanPluginSdk::kWebPathDefaultTimeoutMs};
+    /// At most kWebPathV3MaxCostZones.
+    std::vector<WebPathCostZone> costZones;
 };
 
 /// Defaults match WebWalkRequestV3State's.
@@ -83,13 +93,29 @@ std::vector<State> webPathEndpointStates(
     return states;
 }
 
-/// Plans from the local player. The request borrows `destinations`.
+inline std::vector<WebPathCostZoneState> webPathCostZoneStates(
+        const std::vector<WebPathCostZone>& zones) {
+    std::vector<WebPathCostZoneState> states;
+    states.reserve(zones.size());
+    for (const auto& zone : zones) {
+        states.push_back({zone.area.x, zone.area.y, zone.area.width,
+                          zone.area.height, zone.area.plane,
+                          zone.costPerTile});
+    }
+    return states;
+}
+
+/// Plans from the local player. The request borrows `destinations` and
+/// `costZones`.
 inline WebPathRequestV3State webPathRequestV3(
         const WebPathV3Options& options,
-        const std::vector<WebPathDestinationState>& destinations) {
+        const std::vector<WebPathDestinationState>& destinations,
+        const std::vector<WebPathCostZoneState>& costZones) {
     WebPathRequestV3State request;
     request.destinations = destinations.data();
     request.destinationCount = static_cast<uint32_t>(destinations.size());
+    request.costZones = costZones.empty() ? nullptr : costZones.data();
+    request.costZoneCount = static_cast<uint32_t>(costZones.size());
     request.routeSpace = static_cast<uint32_t>(options.routeSpace);
     request.flags = WebPathV3Flag::UseLocalPlayer
         | (options.allowBanking ? WebPathV3Flag::AllowBanking : 0u)
@@ -122,7 +148,8 @@ public:
             const std::vector<WebPathEndpoint>& starts = {}) const {
         if (destinations.empty()
             || destinations.size() > kWebPathV3MaxEndpoints
-            || starts.size() > kWebPathV3MaxEndpoints) {
+            || starts.size() > kWebPathV3MaxEndpoints
+            || options.costZones.size() > kWebPathV3MaxCostZones) {
             return std::nullopt;
         }
         auto provider = detail::webWalkerProviderV3();
@@ -131,7 +158,9 @@ public:
             detail::webPathEndpointStates<WebPathDestinationState>(destinations);
         const auto startStates =
             detail::webPathEndpointStates<WebPathStartState>(starts);
-        auto request = detail::webPathRequestV3(options, destinationStates);
+        const auto zoneStates = detail::webPathCostZoneStates(options.costZones);
+        auto request =
+            detail::webPathRequestV3(options, destinationStates, zoneStates);
         if (!starts.empty()) {
             request.flags &= ~WebPathV3Flag::UseLocalPlayer;
             request.starts = startStates.data();
@@ -211,15 +240,19 @@ public:
             const std::vector<WebPathEndpoint>& destinations,
             const WebWalkV3Options& options = {}) const {
         if (destinations.empty()
-            || destinations.size() > kWebPathV3MaxEndpoints) {
+            || destinations.size() > kWebPathV3MaxEndpoints
+            || options.path.costZones.size() > kWebPathV3MaxCostZones) {
             return std::nullopt;
         }
         auto provider = detail::webWalkerProviderV3();
         if (!provider) return std::nullopt;
         const auto destinationStates =
             detail::webPathEndpointStates<WebPathDestinationState>(destinations);
+        const auto zoneStates =
+            detail::webPathCostZoneStates(options.path.costZones);
         WebWalkRequestV3State request;
-        request.path = detail::webPathRequestV3(options.path, destinationStates);
+        request.path = detail::webPathRequestV3(options.path, destinationStates,
+                                                zoneStates);
         request.walkFlags =
             (options.manageRun ? TitanPluginSdk::WebWalkFlag::ManageRun : 0u)
             | (options.drinkStamina
